@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafePlace - Ruang Aman Pelajar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <h1>🛡️ SafePlace</h1>
+        <nav>
+            <a onclick="gantiHalaman('beranda')">Beranda</a>
+            <a onclick="gantiHalaman('lapor')">Buat Laporan</a>
+            <a onclick="gantiHalaman('bk')">Dashboard Guru BK</a>
+        </nav>
+    </header>
+
+    <!-- HALAMAN 1: BERANDA -->
+    <div id="page-beranda" class="container">
+        <h2>Kamu Berhak Merasa Aman!</h2>
+        <p>SafePlace hadir sebagai ruang aman bagi pelajar yang mengalami atau melihat tindakan bullying. Identitasmu dijamin <strong>100% aman dan anonim</strong>.</p>
+        <p>Guru BK akan menerima laporanmu dan menanganinya tanpa pernah tahu siapa yang melaporkannya. Jangan takut untuk bersuara!</p>
+        <br>
+        <button onclick="gantiHalaman('lapor')" class="btn">🚨 Laporkan Kejadian Sekarang</button>
+    </div>
+
+    <!-- HALAMAN 2: FORM LAPORAN -->
+    <div id="page-lapor" class="container" style="display: none;">
+        <h2>Formulir Laporan Anonim</h2>
+        <p>Tenang, nama dan identitasmu tidak akan diminta atau disimpan sama sekali.</p>
+
+        <form id="reportForm">
+            <div class="form-group">
+                <label>Bentuk Bullying / Kejadian:</label>
+                <select id="jenis" required>
+                    <option value="">-- Pilih Jenis --</option>
+                    <option value="Bullying Verbal (Olokan/Ancaman)">Bullying Verbal (Olokan/Ancaman)</option>
+                    <option value="Bullying Fisik (Pemukulan/Dorongan)">Bullying Fisik (Pemukulan/Dorongan)</option>
+                    <option value="Cyberbullying (Pelecehan Online)">Cyberbullying (Pelecehan Online)</option>
+                    <option value="Pengucilan / Isolasi Sosial">Pengucilan / Isolasi Sosial</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Nama Terduga Pelaku (Opsional / Jika tahu):</label>
+                <input type="text" id="pelaku" placeholder="Contoh: Kelas/Nama (Boleh dikosongkan)">
+            </div>
+
+            <div class="form-group">
+                <label>Lokasi Kejadian:</label>
+                <input type="text" id="lokasi" placeholder="Contoh: Kantin sekolah, Koridor kelas X, dll" required>
+            </div>
+
+            <div class="form-group">
+                <label>Ceritakan Kronologi Kejadian:</label>
+                <textarea id="deskripsi" placeholder="Jelaskan secara detail apa yang terjadi..." required></textarea>
+            </div>
+
+            <button type="submit" class="btn">Kirim Laporan Secara Anonim</button>
+        </form>
+
+        <div id="resultContainer" style="display:none;"></div>
+    </div>
+
+    <!-- HALAMAN 3: DASHBOARD GURU BK -->
+    <div id="page-bk" class="container" style="display: none;">
+        <h2>Daftar Laporan Masuk (Anonim)</h2>
+        <p>Halaman khusus Guru BK untuk memantau laporan bullying dari siswa.</p>
+        <hr style="margin-bottom: 20px; border: 0; border-top: 1px solid #eee;">
+
+        <div id="listLaporan">
+            <!-- Data laporan akan muncul otomatis di sini -->
+        </div>
+    </div>
+
+    <!-- SCRIPT LOGIKA APLIKASI -->
+    <script>
+        // Fungsi untuk berpindah halaman (Tab)
+        function gantiHalaman(halaman) {
+            document.getElementById('page-beranda').style.display = 'none';
+            document.getElementById('page-lapor').style.display = 'none';
+            document.getElementById('page-bk').style.display = 'none';
+
+            document.getElementById('page-' + halaman).style.display = 'block';
+
+            // Jika membuka halaman BK, muat ulang daftar laporannya
+            if (halaman === 'bk') {
+                muatDataLaporan();
+            }
+        }
+
+        // Fungsi kirim laporan
+        document.getElementById('reportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const jenis = document.getElementById('jenis').value;
+            const pelaku = document.getElementById('pelaku').value || "Tidak diketahui";
+            const lokasi = document.getElementById('lokasi').value;
+            const deskripsi = document.getElementById('deskripsi').value;
+            const tokenID = 'SP-' + Math.floor(100000 + Math.random() * 900000);
+
+            const newReport = {
+                token: tokenID,
+                jenis: jenis,
+                pelaku: pelaku,
+                lokasi: lokasi,
+                deskripsi: deskripsi,
+                tanggal: new Date().toLocaleDateString(),
+                status: 'Menunggu Penanganan'
+            };
+
+            // Simpan ke localStorage browser
+            let reports = JSON.parse(localStorage.getItem('safeReports')) || [];
+            reports.push(newReport);
+            localStorage.setItem('safeReports', JSON.stringify(reports));
+
+            // Tampilkan pesan sukses & token
+            document.getElementById('reportForm').style.display = 'none';
+            const resultDiv = document.getElementById('resultContainer');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert-box">
+                    <h3>✅ Laporan Berhasil Terkirim Secara Anonim!</h3>
+                    <p>Identitasmu aman. Catat <strong>Kode Token</strong> di bawah ini jika ingin mengingat laporanmu:</p>
+                    <h2 style="color: #2a5298; margin: 10px 0;">${tokenID}</h2>
+                    <p style="font-size: 13px; color: #666;">Guru BK akan segera memproses laporan ini.</p>
+                </div>
+                <br>
+                <button onclick="location.reload()" class="btn">Kembali ke Beranda</button>
+            `;
+        });
+
+        // Fungsi memuat laporan di Dashboard BK
+        function muatDataLaporan() {
+            const listDiv = document.getElementById('listLaporan');
+            let reports = JSON.parse(localStorage.getItem('safeReports')) || [];
+
+            if (reports.length === 0) {
+                listDiv.innerHTML = `<p style="text-align: center; color: #777;">Belum ada laporan masuk saat ini.</p>`;
+            } else {
+                listDiv.innerHTML = '';
+                reports.forEach((rep, index) => {
+                    listDiv.innerHTML += `
+                        <div class="report-card">
+                            <span class="badge">${rep.status}</span>
+                            <h3 style="margin-top: 10px; color: #1e3c72;">${rep.jenis}</h3>
+                            <p><strong>Token:</strong> ${rep.token} | <strong>Tanggal:</strong> ${rep.tanggal}</p>
+                            <p><strong>Lokasi:</strong> ${rep.lokasi}</p>
+                            <p><strong>Terduga Pelaku:</strong> ${rep.pelaku}</p>
+                            <p><strong>Kronologi:</strong> ${rep.deskripsi}</p>
+                            <button onclick="selesaikanLaporan(${index})" class="btn" style="font-size: 12px; padding: 6px 12px; margin-top: 10px;">Tandai Selesai / Ditangani</button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // Fungsi ubah status laporan jadi selesai
+        function selesaikanLaporan(index) {
+            let reports = JSON.parse(localStorage.getItem('safeReports')) || [];
+            reports[index].status = '✅ Selesai / Ditangani BK';
+            localStorage.setItem('safeReports', JSON.stringify(reports));
+            muatDataLaporan();
+        }
+    </script>
+
+</body>
+</html>
